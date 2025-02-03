@@ -20,15 +20,16 @@ def download_from_gdrive(file_id, destination):
 
 def main():
     """Main Streamlit App"""
-    # Ensure the file is downloaded
-    download_from_gdrive(FILE_ID, DESTINATION_PATH)
-
     # Fix SQLite issue with Streamlit
     __import__('pysqlite3')
     import sys
     sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
     st.set_page_config(page_title="Demo", page_icon=":memo:", layout="wide")
+
+    # Ensure the file is downloaded
+    download_from_gdrive(FILE_ID, DESTINATION_PATH)
+
     pg = st.navigation(
         [
             st.Page("pages/page1.py", title="Introduction"),
@@ -36,6 +37,7 @@ def main():
         ]
     )
     pg.run()
+
 
 if __name__ == "__main__":
     main()
