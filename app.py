@@ -5,18 +5,23 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Google Drive file ID (Extract from the share link)
+# Google Drive file ID (Extracted from share link)
 FILE_ID = "1bsUFKFFIW9YWZRZAyKDyuNn46Vp-CxBP"
-DESTINATION_PATH = "chatbot/chroma_db/"
+
+# Ensure destination includes the filename
+DESTINATION_FOLDER = "chatbot/chroma_db"
+DESTINATION_FILE = os.path.join(DESTINATION_FOLDER, "croma.sqlite3")
+
 
 def download_from_gdrive(file_id, destination):
     """Download a file from Google Drive and save it."""
-    if not os.path.exists(destination):  # Avoid redownloading
+    if not os.path.exists(destination):
         os.makedirs(os.path.dirname(destination), exist_ok=True)
         gdown.download(f"https://drive.google.com/uc?id={file_id}", destination, quiet=False)
-        st.success(f"File downloaded successfully to {destination}")
+        st.success(f"✅ File downloaded successfully to {destination}")
     else:
-        st.info("File already exists, skipping download.")
+        st.info("ℹ️ File already exists, skipping download.")
+
 
 def main():
     """Main Streamlit App"""
@@ -28,7 +33,7 @@ def main():
     st.set_page_config(page_title="Demo", page_icon=":memo:", layout="wide")
 
     # Ensure the file is downloaded
-    download_from_gdrive(FILE_ID, DESTINATION_PATH)
+    download_from_gdrive(FILE_ID, DESTINATION_FILE)
 
     pg = st.navigation(
         [
