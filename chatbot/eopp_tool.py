@@ -28,7 +28,7 @@ def initial_filtering_tool(filters_json: str) -> str:
     except Exception as e:
         return f"Error parsing filters JSON: {e}"
 
-    file_path = "chatbot/data/updated_data.xlsx"  # Update this path as needed
+    file_path = "chatbot/data/processed/updated_data.xlsx"  # Update this path as needed
     filtered_df = initial_filtering(file_path, filters)
 
     if filtered_df.empty:
