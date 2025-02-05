@@ -1,37 +1,38 @@
+import json
+
 from langchain.tools import tool
 
+from chatbot.filter import initial_filtering
 
-@tool("match_eopp")
-def match_eopp(
-    name: str,
-    date_of_birth: str,
-    address: str,
-    contact_number: str,
-    email_id: str,
-    latest_qualification: str,
-    qualification_info: dict = None
-) -> str:
+
+@tool()
+def initial_filtering_tool(filters_json: str) -> str:
     """
-    Matches EOPPs based on user details and qualification info.
+    Initial Filtering Tool:
 
-    - latest_qualification (str): One of 'O-levels', 'A-Level', 'Bachelors', 'Masters'.
-    - qualification_info (dict): Dict with extra details based on qualification:
-        if 'O-levels': {'english_result': str, 'maths_result': str, 'science_result': str}
-        if 'A-Level': {'a_level_results': str} (example: ACB)
-        if 'Bachelors': {'stream_of_study_bachelors': str, 'gpa_bachelors': float, 'bring_dependents_bachelors': str (Y/N)}
-        if 'Masters': {'stream_of_study_masters': str, 'gpa_masters': float, 'bring_dependents_masters': str (Y/N)}
+    Filters courses based on key criteria provided in a JSON string. For example,
+    to retrieve all Bachelor's degree courses, you can pass:
 
-    Example:
-        "John Doe", "1990-01-01", "123 Main St", "+1234567890", "john@example.com", "A-Level", {"a_level_results": "CCC"}
-    """  # noqa: E501
+        {
+            "university name": null,
+            "field type": "engineering",
+            "location": "london",
+            "degree program type": "bachelor's"
+        }
 
-    if qualification_info is None:
-        return "Missing qualification_info. Please provide details based on your latest qualification."
+    The tool returns a comma-separated list of course names that match the criteria,
+    or a message indicating no courses were found.
+    """
+    try:
+        filters = json.loads(filters_json)
+    except Exception as e:
+        return f"Error parsing filters JSON: {e}"
 
-    # logic here
-    # return "success"
-    return (
-        "Thank you for providing your details! I've started the process of finding "
-        "the best educational opportunities for you. You will receive an email once the matching process is completed. "
-        "Feel free to reach out if you have any questions in the meantime!"
-    )
+    file_path = "chatbot/data/updated_data.xlsx"  # Update this path as needed
+    filtered_df = initial_filtering(file_path, filters)
+
+    if filtered_df.empty:
+        return "No courses found matching the provided criteria."
+
+    courses_list = filtered_df["course_or_degree_name"].tolist()
+    return ", ".join(courses_list)

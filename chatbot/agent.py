@@ -1,11 +1,12 @@
 import os
+import json
 from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_community.agent_toolkits.load_tools import load_tools
 from langchain.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
-from chatbot.memory import agent_memory
-from chatbot.eopp_tool import match_eopp
 from dotenv import load_dotenv
+from chatbot.memory import agent_memory
+from chatbot.eopp_tool import initial_filtering_tool
 from chatbot.tools.information_rag_tool import query_data
 
 # Load environment variables
@@ -19,8 +20,8 @@ os.environ["LANGCHAIN_TRACING_V2"] = 'true'
 # Load Google search tool
 web_search_tool = load_tools(["google-serper"], serper_api_key=SERPER_API_KEY)
 
-# Add course retrieval tool to tools list
-tools = web_search_tool + [match_eopp, query_data]
+# Combine tools: Google search + our filtering tool + other tools as needed.
+tools = web_search_tool + [query_data, initial_filtering_tool]
 
 
 def load_onboarding_questions() -> str:
@@ -28,56 +29,64 @@ def load_onboarding_questions() -> str:
     questions_file = os.path.join("docs", "questions.txt")
     if not os.path.exists(questions_file):
         raise FileNotFoundError(f"{questions_file} not found.")
-
     with open(questions_file, 'r', encoding='utf-8') as file:
         onboarding_questions = file.read().strip()
-
     return onboarding_questions
 
 
 def setup_agent() -> AgentExecutor:
-    """Set up the agent for finding educational opportunities and course details."""
+    """Set up the main agent with all required tools and prompt."""
+    # Reload environment variables (if needed)
+    load_dotenv()
+    SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 
-    extracted_details_path = "temp/extracted_details.txt"
+    # Load the Google search tool again (if needed)
+    web_search_tool = load_tools(["google-serper"], serper_api_key=SERPER_API_KEY)
+    # Rebuild the tools list (include our filtering tool and query_data tool)
+    tools = web_search_tool + [query_data, initial_filtering_tool]
 
+    # Read the previously extracted CV details from file (if available)
+    extracted_details_path = os.path.join("temp", "extracted_details.txt")
     if os.path.exists(extracted_details_path):
-        with open(extracted_details_path, "r") as file:
+        with open(extracted_details_path, "r", encoding="utf-8") as file:
             extracted_details = file.read().strip()
     else:
         extracted_details = "No extracted details available."
 
-    # Updated Prompt with Course Retrieval
+    # Build the prompt template including onboarding questions and extracted CV details
     prompt = PromptTemplate(
         input_variables=["agent_scratchpad", "chat_history", "input"],
         template=(
             f"""
             You are an AI education consultant helping students find the best **Educational Opportunity and Pathways Program (EOPP)**.
 
-            Your Responsibilities
-            Gather Required Information  
-            - To find the best EOPP, we need key details from the user.
-            - Here are the required details:  
+            Your Responsibilities:
+            - Gather required information from the user.
+            - Here are the required onboarding questions:
             {load_onboarding_questions()}  
-            - We have already analyzed their CV and found:
+
+            We have already analyzed the user's CV and found:
             {extracted_details}
-            - Verify with the user if the extracted details are correct.  
-            - Ask only one missing detail at a time to avoid overwhelming the user.
 
-            Retrieve Course-Related Information  
-            - If the user asks about course fees, duration, entry requirements, or course information, use the 'course_retrieval' tool to fetch relevant details.  
-            - If the requested course information is not found, automatically use the 'web_search_tool' to get the latest data.
+            Please verify with the user if the above details are correct.
+            Ask for any missing or updated information one detail at a time.
 
-            Match the Best EOPP  
-            - Once all required details are collected, use the 'match_eopp' tool to suggest the most suitable educational opportunities.
+            If a user asks for courses based on specific criteria, such as master's degree programs, please extract the necessary filters (for example, set "degree program type" to "master's") and call the 'initial_filtering_tool' accordingly.
 
-            ---  
-            Important Rules for Engagement: 
-            Be concise and structured in responses.  
-            If any requested information is missing, ask for it one at a time. 
-            If the user is unsure, offer guidance based on available options.  
-            Always provide the most relevant and up-to-date information. 
+            Retrieve Course-Related Information:
+            - Use the 'initial_filtering_tool' to filter courses based on key parameters like university name, field type, location, and degree program type.
+            - For example, if a user asks: "Can you give me the related master's degree with their university?" you should interpret that as a request for courses with "degree program type": "master's".
 
-            Let's get started!   
+            Match the Best EOPP:
+            - Use the 'match_eopp' tool to suggest the most suitable educational opportunities.
+
+            ---
+            Important Rules for Engagement:
+            - Be concise and structured.
+            - Ask for missing information one at a time.
+            - Provide the most relevant and up-to-date information.
+
+            Let's get started!
             """
             """
             Chat History:
@@ -89,8 +98,10 @@ def setup_agent() -> AgentExecutor:
         ),
     )
 
+    # Set up the language model (using GPT-4o in this example)
     agent_llm = ChatOpenAI(model="gpt-4o", temperature=0, streaming=True)
 
+    # Create the agent using the tool-calling agent builder
     agent = create_tool_calling_agent(agent_llm, tools, prompt)
     agent_executor = AgentExecutor(
         agent=agent,
@@ -100,5 +111,12 @@ def setup_agent() -> AgentExecutor:
         handle_parsing_errors=True,
         max_iterations=5,
     )
-
     return agent_executor
+
+
+if __name__ == "__main__":
+    # To test the agent locally:
+    agent_executor = setup_agent()
+    # Example of running the agent with a sample input:
+    response = agent_executor.run("Hello, I'd like to find engineering courses for a bachelor's degree.")
+    print(response)

@@ -1,21 +1,14 @@
 import os
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import ChatOpenAI
-from langchain_core.output_parsers import StrOutputParser
-from typing import Any
 
 
-def extract_cv_details(file_path: str) -> Any:
+def extract_cv_details(file_path: str) -> str:
     """
     Extract details from a CV in PDF format.
-
-    Args:
-        file_path (str): The path to the PDF file containing the CV.
-
-    Returns:
-        Any: The extracted details formatted according to the defined output structure.
     """
+    from langchain_community.document_loaders import PyPDFLoader
+    from langchain_core.prompts import ChatPromptTemplate
+    from langchain_openai import ChatOpenAI
+    from langchain_core.output_parsers import StrOutputParser
 
     loader = PyPDFLoader(file_path)
     cv = loader.load()
@@ -31,7 +24,7 @@ def extract_cv_details(file_path: str) -> Any:
         5. Email ID
         6. Latest qualification (month-year)
 
-        If the qualification is GCSE or O-levels, following resultsm
+        If the qualification is GCSE or O-levels, following results:
         - English
         - Maths
         - Science
@@ -54,13 +47,11 @@ def extract_cv_details(file_path: str) -> Any:
     )
 
     model = ChatOpenAI()
-
     output_parser = StrOutputParser()
-
     chain = prompt | model | output_parser
     output = chain.invoke({"cv": cv})
-    os.makedirs("tmp", exist_ok=True)
 
+    os.makedirs("temp", exist_ok=True)
     with open("temp/extracted_details.txt", "w") as file:
         file.write(output)
 
