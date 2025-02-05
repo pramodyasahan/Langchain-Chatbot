@@ -1,6 +1,9 @@
 import pandas as pd
 
 
+import pandas as pd
+
+
 def initial_filtering(file_path, filters):
     """
     Performs an initial filtering of the courses based on key parameters:
@@ -17,7 +20,7 @@ def initial_filtering(file_path, filters):
             "university name", "field type", "location", "degree program type"
 
     Returns:
-        pd.DataFrame: Filtered DataFrame after applying the initial filters.
+        pd.DataFrame: Filtered DataFrame after applying the initial filters, including course name and university name.
     """
     # Load the Excel file
     df = pd.read_excel(file_path, sheet_name="Sheet1")
@@ -53,7 +56,14 @@ def initial_filtering(file_path, filters):
         df = df[df["degree_program"].notna() & (df["degree_program"] == degree_filter)]
         print("After degree program type filter:", df.shape[0])
 
-    return df
+    # Ensure the returned DataFrame includes both the university name and course name
+    if "course_name" in df.columns:
+        return df[["university_name", "course_name"]]
+    else:
+        print("Course name column not found.")
+        return df
+
+
 
 
 

@@ -26,9 +26,9 @@ def download_from_gdrive(file_id, destination):
 def main():
     """Main Streamlit App"""
     # Fix SQLite issue with Streamlit
-    __import__('pysqlite3')
-    import sys
-    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+    # __import__('pysqlite3')
+    # import sys
+    # sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
 
     st.set_page_config(page_title="Demo", page_icon=":memo:", layout="wide")
 

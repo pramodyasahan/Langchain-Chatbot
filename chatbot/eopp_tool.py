@@ -34,5 +34,10 @@ def initial_filtering_tool(filters_json: str) -> str:
     if filtered_df.empty:
         return "No courses found matching the provided criteria."
 
-    courses_list = filtered_df["course_or_degree_name"].tolist()
-    return ", ".join(courses_list)
+    courses_and_universities = [
+        f"{row['university_name']} - {row['course_or_degree_name']}" 
+        for _, row in filtered_df.iterrows()
+    ]
+    
+    # Join the results into a comma-separated string
+    return ", ".join(courses_and_universities)
