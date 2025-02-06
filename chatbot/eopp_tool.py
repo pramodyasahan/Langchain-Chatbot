@@ -95,21 +95,16 @@ def initial_filtering_tool(filters_json: str) -> str:
     file_path = "chatbot/data/processed/updated_data.xlsx"
     filtered_df = initial_filtering(file_path, filters)
 
-
     if isinstance(filtered_df, str):
         return filtered_df
 
     if filtered_df.empty:
         return "No matching results found."
 
-    # If the user is asking about a specific course, return the university offering it
-    if "course name" in filters:
-        results = filtered_df.apply(
-            lambda row: f"{row['university_name'].title()} offers {row['course_or_degree_name'].title()}",
-            axis=1
-        ).tolist()
-    else:
-        # Otherwise, return the available courses
-        results = filtered_df["course_or_degree_name"].tolist()
+    courses_and_universities = [
+        f"{row['university_name']} - {row['course_or_degree_name']}"
+        for _, row in filtered_df.iterrows()
+    ]
 
-    return ", ".join(results)
+    # Join the results into a comma-separated string
+    return ", ".join(courses_and_universities)

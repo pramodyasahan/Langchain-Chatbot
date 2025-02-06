@@ -12,15 +12,8 @@ from chatbot.tools.information_rag_tool import query_data
 # Load environment variables
 load_dotenv()
 
-# SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-# LANGCHAIN_API_KEY = os.environ.get("LANGCHAIN_API_KEY")
-# os.environ["LANGCHAIN_TRACING_V2"] = 'true'
 
-# # Load Google search tool
-# web_search_tool = load_tools(["google-serper"], serper_api_key=SERPER_API_KEY)
-
-# Combine tools: Google search + our filtering tool + other tools as needed.
 tools = [query_data, initial_filtering_tool]
 
 
@@ -36,15 +29,6 @@ def load_onboarding_questions() -> str:
 
 def setup_agent() -> AgentExecutor:
     """Set up the main agent with all required tools and prompt."""
-    # Reload environment variables (if needed)
-    load_dotenv()
-    # SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
-
-    # # Load the Google search tool again (if needed)
-    # web_search_tool = load_tools(["google-serper"], serper_api_key=SERPER_API_KEY)
-    # # Rebuild the tools list (include our filtering tool and query_data tool)
-    tools = [query_data, initial_filtering_tool]
-
     # Read the previously extracted CV details from file (if available)
     extracted_details_path = os.path.join("temp", "extracted_details.txt")
     if os.path.exists(extracted_details_path):

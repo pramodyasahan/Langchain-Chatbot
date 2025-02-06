@@ -6,59 +6,58 @@ from langchain_community.document_loaders import TextLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 
-# Configure logging
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    level=logging.INFO
-)
+# Load environment variables
 load_dotenv()
 
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-def create_chroma_vectorstore_from_folder(folder_path, collection_name):
+
+def create_chroma_vectorstore_from_folders(base_folder_path, collection_name="document_collection"):
     """
-    Create a Chroma vector store from text files in a specified folder.
+    Create a Chroma vector store from text files in specified folder and its subfolders.
 
     Args:
-        folder_path (str): Path to the folder containing text files.
-        collection_name (str): Name of the Chroma collection.
+        base_folder_path (str): Path to the base folder containing subfolders with text files
+        collection_name (str, optional): Name of the Chroma collection. Defaults to "document_collection"
 
     Returns:
-        Chroma: A Chroma vector store with embedded documents.
+        Chroma: A Chroma vector store with embedded documents
     """
-    if not os.path.exists(folder_path):
-        logging.error(f"Folder path '{folder_path}' does not exist.")
-        return None
+    logging.info(f"Starting vector store creation for folder: {base_folder_path}")
 
-    logging.info(f"📂 Processing files from: {folder_path}")
+    if not os.path.exists(base_folder_path):
+        logging.error(f"Folder path {base_folder_path} does not exist.")
+        raise ValueError(f"Folder path {base_folder_path} does not exist.")
 
     embeddings = OpenAIEmbeddings()
     documents = []
-    file_count = 0
 
-    # Read and load documents
-    for filename in os.listdir(folder_path):
-        if filename.endswith(".txt"):
-            file_path = os.path.join(folder_path, filename)
-            try:
-                loader = TextLoader(file_path, encoding="utf-8")
-                doc = loader.load()
-                documents.extend(doc)
-                file_count += 1
-            except Exception as e:
-                logging.error(f"❌ Error loading '{filename}': {e}")
+    # Walk through all subdirectories and files
+    for subdir, _, files in os.walk(base_folder_path):
+        logging.info(f"Scanning folder: {subdir}")
+        for filename in files:
+            if filename.endswith('.txt'):
+                file_path = os.path.join(subdir, filename)
+                try:
+                    logging.info(f"Loading file: {file_path}")
+                    loader = TextLoader(file_path, encoding='utf-8')
+                    documents.extend(loader.load())
+                except Exception as e:
+                    logging.error(f"Error loading {filename}: {e}")
 
     if not documents:
-        logging.warning(f"⚠️ No text documents found in {folder_path}. Skipping collection.")
-        return None
+        logging.warning("No text documents found in the specified folder.")
+        raise ValueError("No text documents found in the specified folder.")
 
-    logging.info(f"Total files processed: {file_count}")
-
-    # Split documents into chunks
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+    logging.info("Splitting documents into chunks...")
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=100
+    )
     splits = text_splitter.split_documents(documents)
-    logging.info(f"Total document chunks created: {len(splits)}")
 
-    # Create Chroma vector store
+    logging.info("Creating Chroma vector store...")
     vectorstore = Chroma.from_documents(
         documents=splits,
         embedding=embeddings,
@@ -66,38 +65,15 @@ def create_chroma_vectorstore_from_folder(folder_path, collection_name):
         persist_directory="../chroma_db"
     )
 
-    logging.info(f"✅ Chroma vectorstore '{collection_name}' created successfully at '../chroma_db'.")
-
+    logging.info("Vector store creation complete.")
     return vectorstore
-
-
-def process_all_universities(dataset_base_path):
-    """
-    Process all university folders inside the dataset base path and create a Chroma vector store for each.
-
-    Args:
-        dataset_base_path (str): Path to the dataset containing multiple university folders.
-    """
-    logging.info("🚀 Starting vector store creation for all universities...")
-
-    if not os.path.exists(dataset_base_path):
-        logging.error(f"Dataset base path '{dataset_base_path}' does not exist.")
-        return
-
-    for university_folder in os.listdir(dataset_base_path):
-        university_path = os.path.join(dataset_base_path, university_folder)
-
-        if os.path.isdir(university_path):  # Ensure it's a folder
-            collection_name = university_folder.lower().replace(" ", "_")  # Normalize collection name
-            logging.info(f"🔍 Processing university: {university_folder} -> Collection: {collection_name}")
-            create_chroma_vectorstore_from_folder(university_path, collection_name)
-
-    logging.info("🎉 Vector store creation for all universities completed!")
 
 
 def main():
     dataset_base_path = "../../dataset"
-    process_all_universities(dataset_base_path)
+    logging.info("Starting the process...")
+    create_chroma_vectorstore_from_folders(dataset_base_path)
+    logging.info("Process completed successfully.")
 
 
 if __name__ == "__main__":
