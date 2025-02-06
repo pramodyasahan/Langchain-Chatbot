@@ -96,7 +96,7 @@ def process_all_universities(dataset_base_path):
 
 
 def main():
-    dataset_base_path = "../../dataset"  # Base path containing multiple university folders
+    dataset_base_path = "../../dataset"
     process_all_universities(dataset_base_path)
 
 

@@ -3,57 +3,60 @@ import pandas as pd
 
 def initial_filtering(file_path, filters):
     """
-    Performs an initial filtering of the courses based on key parameters:
-    - University name
-    - Field name (e.g., Engineering, Business, etc.)
-    - University location
-    - Degree program type
-
-    The filtering is case-insensitive and trims extra whitespace.
-
-    Args:
-        file_path (str): Path to the Excel file.
-        filters (dict): Dictionary containing filtering criteria with keys:
-            "university name", "field type", "location", "degree program type"
-
-    Returns:
-        pd.DataFrame: Filtered DataFrame after applying the initial filters.
+    Performs an initial filtering of the courses based on key parameters.
+    Supports:
+    - Finding universities based on a specific degree program.
+    - Standard filtering using university name, field type, location, and degree program type.
     """
+
     # Load the Excel file
     df = pd.read_excel(file_path, sheet_name="Sheet1")
 
-    # Normalize the columns for string comparison
-    for col in ["university_name", "field_name", "location", "degree_program"]:
+    # Normalize dataset column values (convert to lowercase for case-insensitive matching)
+    for col in ["university_name", "field_name", "location", "degree_program", "course_or_degree_name"]:
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip().str.lower()
 
     print("Initial course count:", df.shape[0])
 
-    # Apply the University Name filter if provided
+    # Alias check: If "course name" is provided, map it to "course_or_degree_name"
+    if "course name" in filters:
+        filters["course_or_degree_name"] = filters.pop("course name")
+
+    # Check if the user query is **only** asking for universities offering a specific course
+    if filters.get("course_or_degree_name") and not any(
+            key in filters for key in ["university name", "field type", "location", "degree program type"]
+    ):
+        course_filter = filters["course_or_degree_name"].strip().lower()
+        df_filtered = df[df["course_or_degree_name"].notna() & df["course_or_degree_name"].str.contains(
+            course_filter, case=False, na=False, regex=False)]
+        print("After filtering by course name:", df_filtered.shape[0])
+
+        # Return only unique universities that offer this course
+        if not df_filtered.empty:
+            return df_filtered[["university_name"]].drop_duplicates()
+
+        return "No universities found for this course."
+
+    # Apply standard filtering (when multiple filters are used)
     if filters.get("university name"):
-        uni_filter = filters["university name"].strip().lower()
-        df = df[df["university_name"].notna() & (df["university_name"] == uni_filter)]
+        df = df[df["university_name"] == filters["university name"].strip().lower()]
         print("After university name filter:", df.shape[0])
 
-    # Apply the Field Type filter if provided (e.g., Engineering)
     if filters.get("field type"):
-        field_filter = filters["field type"].strip().lower()
-        df = df[df["field_name"].notna() & (df["field_name"] == field_filter)]
+        df = df[df["field_name"] == filters["field type"].strip().lower()]
         print("After field type filter:", df.shape[0])
 
-    # Apply the University Location filter if provided
     if filters.get("location"):
-        location_filter = filters["location"].strip().lower()
-        df = df[df["location"].notna() & (df["location"] == location_filter)]
+        df = df[df["location"] == filters["location"].strip().lower()]
         print("After location filter:", df.shape[0])
 
-    # Apply the Degree Program Type filter if provided
     if filters.get("degree program type"):
-        degree_filter = filters["degree program type"].strip().lower()
-        df = df[df["degree_program"].notna() & (df["degree_program"] == degree_filter)]
+        df = df[df["degree_program"] == filters["degree program type"].strip().lower()]
         print("After degree program type filter:", df.shape[0])
 
-    return df
-
-
-
+    # Return results
+    if not df.empty and "course_or_degree_name" in df.columns:
+        return df[["university_name", "course_or_degree_name"]]
+    else:
+        return "No matching results found."
