@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Google Drive file ID (Extracted from share link)
-FILE_ID = "1k_0kpGKbJD2e2Mm8oE-kqIEHrsBGBrZt"
+FILE_ID = "1Dc00KHaD4b_RmcCxeEbXmNLP5d7yTEPF"
 
 # Ensure destination includes the filename
 DESTINATION_FOLDER = "chatbot/chroma_db"
