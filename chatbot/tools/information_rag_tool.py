@@ -24,7 +24,7 @@ def query_data(input_string: str):
     chroma_db = Chroma(
         persist_directory=DB_FOLDER,
         embedding_function=chroma_embeddings,
-        collection_name="spec",
+        collection_name="document_collection",
     )
 
     retriever = chroma_db.as_retriever(search_kwargs={'k': 20})  # Increased k to improve retrieval
