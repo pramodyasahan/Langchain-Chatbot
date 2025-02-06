@@ -6,11 +6,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Google Drive file ID (Extracted from share link)
-FILE_ID = "15irbPHDhuC38V_2A8urooZyv952yUQjt"
+FILE_ID = "1k_0kpGKbJD2e2Mm8oE-kqIEHrsBGBrZt"
 
 # Ensure destination includes the filename
 DESTINATION_FOLDER = "chatbot/chroma_db"
-DESTINATION_FILE = os.path.join(DESTINATION_FOLDER, "croma.sqlite3")
+DESTINATION_FILE = os.path.join(DESTINATION_FOLDER, "chroma.sqlite3")
 
 
 def download_from_gdrive(file_id, destination):

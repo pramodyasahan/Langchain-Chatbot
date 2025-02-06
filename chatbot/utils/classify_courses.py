@@ -14,13 +14,12 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Input and output file paths
-input_file = "../data/Merged_Excel_Data.csv"
+input_file = "../data/4uni.xlsx"
 output_file = "../data/processed/updated_data.xlsx"
 
-# Convert CSV to Excel and load the dataset
-df = pd.read_csv(input_file)
-df.to_excel(output_file, index=False)
-logging.info("Successfully converted CSV to Excel and loaded the dataset.")
+
+df = pd.read_excel(input_file)
+
 
 # Initialize OpenAI ChatGPT model
 llm = ChatOpenAI(model_name="gpt-4", temperature=0.3)

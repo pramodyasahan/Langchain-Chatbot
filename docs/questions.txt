@@ -29,6 +29,8 @@ Stream of study
 1. GPA
 2. The requirement to bring dependents
 
+After that ask what is the filed you want to apply out of (healthcare, computer science, business, engineering,law, Arts & Humanities, Social Sciences, Agriculture & Environmental Science, Natural Sciences)
+
 7. Preferred study destination (s)
 8. Readiness (Timeline to commence)
 9. English language qualifications - IELTS / PTE
